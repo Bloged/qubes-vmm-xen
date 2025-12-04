@@ -1,18 +1,5 @@
-From d04a833f17bdb466b658ebea3ac94f876a2ca444 Mon Sep 17 00:00:00 2001
-From: Demi Marie Obenour <demi@invisiblethingslab.com>
-Date: Mon, 26 Sep 2022 11:05:32 -0400
-Subject: [PATCH] libxl: Add additional domain suspend/resume logs
-
-This was useful when debugging, but is not required.
-
-Signed-off-by: Demi Marie Obenour <demi@invisiblethingslab.com>
----
- tools/libs/light/libxl_dom_suspend.c | 20 ++++++++++++++++++--
- tools/libs/light/libxl_domain.c      |  1 +
- 2 files changed, 19 insertions(+), 2 deletions(-)
-
 diff --git a/tools/libs/light/libxl_dom_suspend.c b/tools/libs/light/libxl_dom_suspend.c
-index 1ee3e5d88af8..3d53a8f7b460 100644
+index 1ee3e5d88a..3d53a8f7b4 100644
 --- a/tools/libs/light/libxl_dom_suspend.c
 +++ b/tools/libs/light/libxl_dom_suspend.c
 @@ -321,9 +321,11 @@ static void domain_suspend_common_pvcontrol_suspending(libxl__egc *egc,
@@ -102,7 +89,7 @@ index 1ee3e5d88af8..3d53a8f7b460 100644
          rc = ERROR_FAIL;
          goto out;
 diff --git a/tools/libs/light/libxl_domain.c b/tools/libs/light/libxl_domain.c
-index 6751fc785f72..324a4c6607e7 100644
+index 6751fc785f..324a4c6607 100644
 --- a/tools/libs/light/libxl_domain.c
 +++ b/tools/libs/light/libxl_domain.c
 @@ -563,6 +563,7 @@ int libxl_domain_suspend_only(libxl_ctx *ctx, uint32_t domid,
@@ -113,6 +100,3 @@ index 6751fc785f72..324a4c6607e7 100644
      rc = libxl__domain_suspend_init(egc, dsps, type);
      if (rc < 0) goto out_err;
      dsps->callback_common_done = domain_suspend_empty_cb;
--- 
-2.48.1
-

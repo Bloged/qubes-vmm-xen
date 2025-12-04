@@ -1,19 +1,5 @@
-From debe19ab592b03d95e00e9e37a1d1fb4a5cdd2bd Mon Sep 17 00:00:00 2001
-From: Demi Marie Obenour <demi@invisiblethingslab.com>
-Date: Thu, 22 Sep 2022 12:27:32 -0400
-Subject: [PATCH] libxl: Fix race condition in domain suspension
-
-Check if the domain has suspended after setting the XenStore watch to
-prevent race conditions.  Also check if a guest has suspended when the
-timeout handler is called, and do not consider this to be a timeout.
-
-Signed-off-by: Demi Marie Obenour <demi@invisiblethingslab.com>
----
- tools/libs/light/libxl_dom_suspend.c | 15 +++++++++++----
- 1 file changed, 11 insertions(+), 4 deletions(-)
-
 diff --git a/tools/libs/light/libxl_dom_suspend.c b/tools/libs/light/libxl_dom_suspend.c
-index 1c7ceee60dbf..1ee3e5d88af8 100644
+index 1c7ceee60d..1ee3e5d88a 100644
 --- a/tools/libs/light/libxl_dom_suspend.c
 +++ b/tools/libs/light/libxl_dom_suspend.c
 @@ -209,7 +209,8 @@ static void domain_suspend_common_wait_guest_evtchn(libxl__egc *egc,
@@ -70,6 +56,3 @@ index 1c7ceee60dbf..1ee3e5d88af8 100644
      if (rc == ERROR_TIMEDOUT) {
          LOGD(ERROR, dsps->domid, "guest did not suspend, timed out");
          rc = ERROR_GUEST_TIMEDOUT;
--- 
-2.48.1
-

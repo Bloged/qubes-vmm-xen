@@ -1,29 +1,8 @@
-From 631a20ba94fb494c107e0124aef2b927846f4c5d Mon Sep 17 00:00:00 2001
-From: Demi Marie Obenour <demi@invisiblethingslab.com>
-Date: Fri, 18 Nov 2022 22:51:04 -0500
-Subject: [PATCH] Validate EFI memory descriptors
-
-It turns out that these can be invalid in various ways.  Based on code
-Ard Biesheuvel contributed for Linux.
-
-This could cause problems on buggy firmware, but the original behavior
-(silently processing garbage descriptors) isn't great either.
-
-Co-developed-by: Ard Biesheuvel <ardb@kernel.org>
-Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
-Signed-off-by: Demi Marie Obenour <demi@invisiblethingslab.com>
----
- xen/arch/x86/efi/efi-boot.h |  4 +++-
- xen/common/efi/boot.c       | 19 ++++++++++++++-----
- xen/common/efi/efi.h        | 21 +++++++++++++++++++++
- xen/common/efi/runtime.c    |  2 +-
- 4 files changed, 39 insertions(+), 7 deletions(-)
-
 diff --git a/xen/arch/x86/efi/efi-boot.h b/xen/arch/x86/efi/efi-boot.h
-index 39cc8baef4bc..d9666517f256 100644
+index 367f6f36b5..fffd1dde50 100644
 --- a/xen/arch/x86/efi/efi-boot.h
 +++ b/xen/arch/x86/efi/efi-boot.h
-@@ -164,9 +164,11 @@ static void __init efi_arch_process_memory_map(EFI_SYSTEM_TABLE *SystemTable,
+@@ -155,9 +155,11 @@ static void __init efi_arch_process_memory_map(EFI_SYSTEM_TABLE *SystemTable,
      for ( e820_raw.nr_map = i = 0; i < map_size; i += desc_size )
      {
          EFI_MEMORY_DESCRIPTOR *desc = map + i;
@@ -37,10 +16,10 @@ index 39cc8baef4bc..d9666517f256 100644
          {
          default:
 diff --git a/xen/common/efi/boot.c b/xen/common/efi/boot.c
-index ad8488f7f9d7..8d017abf9be8 100644
+index 0fdd73e132..dfdfecfd46 100644
 --- a/xen/common/efi/boot.c
 +++ b/xen/common/efi/boot.c
-@@ -593,15 +593,14 @@ static UINTN __initdata esrt = EFI_INVALID_TABLE_ADDR;
+@@ -594,15 +594,14 @@ static UINTN __initdata esrt = EFI_INVALID_TABLE_ADDR;
  
  static size_t __init get_esrt_size(const EFI_MEMORY_DESCRIPTOR *desc)
  {
@@ -59,7 +38,7 @@ index ad8488f7f9d7..8d017abf9be8 100644
      /*
       * The specification requires EfiBootServicesData, but also accept
       * EfiRuntimeServicesData (for compatibility with buggy firmware)
-@@ -1688,7 +1687,7 @@ void __init efi_init_memory(void)
+@@ -1692,7 +1691,7 @@ void __init efi_init_memory(void)
      for ( i = 0; i < efi_memmap_size; i += efi_mdesc_size )
      {
          EFI_MEMORY_DESCRIPTOR *desc = efi_memmap + i;
@@ -68,7 +47,7 @@ index ad8488f7f9d7..8d017abf9be8 100644
          unsigned long smfn, emfn;
          unsigned int prot = PAGE_HYPERVISOR_RWX;
          paddr_t mem_base;
-@@ -1709,6 +1708,16 @@ void __init efi_init_memory(void)
+@@ -1713,6 +1712,16 @@ void __init efi_init_memory(void)
                      ROUNDUP(desc->PhysicalStart + len, PAGE_SIZE));
          }
  
@@ -86,7 +65,7 @@ index ad8488f7f9d7..8d017abf9be8 100644
              continue;
  
 diff --git a/xen/common/efi/efi.h b/xen/common/efi/efi.h
-index c02fbb7b69fc..c86450eb7093 100644
+index c02fbb7b69..c86450eb70 100644
 --- a/xen/common/efi/efi.h
 +++ b/xen/common/efi/efi.h
 @@ -51,3 +51,24 @@ void free_ebmalloc_unused_mem(void);
@@ -115,10 +94,10 @@ index c02fbb7b69fc..c86450eb7093 100644
 +    return desc->NumberOfPages << EFI_PAGE_SHIFT;
 +}
 diff --git a/xen/common/efi/runtime.c b/xen/common/efi/runtime.c
-index d952c3ba785e..84cc5f73f8b0 100644
+index 7e1fce291d..ecde6196d1 100644
 --- a/xen/common/efi/runtime.c
 +++ b/xen/common/efi/runtime.c
-@@ -270,7 +270,7 @@ int efi_get_info(uint32_t idx, union xenpf_efi_info *info)
+@@ -279,7 +279,7 @@ int efi_get_info(uint32_t idx, union xenpf_efi_info *info)
          for ( i = 0; i < efi_memmap_size; i += efi_mdesc_size )
          {
              EFI_MEMORY_DESCRIPTOR *desc = efi_memmap + i;
@@ -127,6 +106,3 @@ index d952c3ba785e..84cc5f73f8b0 100644
  
              if ( info->mem.addr >= desc->PhysicalStart &&
                   info->mem.addr < desc->PhysicalStart + len )
--- 
-2.48.1
-

@@ -1,23 +1,5 @@
-From 060a68175d9650285a55471f6a2f0e82480962fd Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
- <marmarek@invisiblethingslab.com>
-Date: Wed, 16 Nov 2022 01:43:37 +0100
-Subject: [PATCH] hotplug: trigger udev event on block attach/detach
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-Update QubesDB entries of given device (and its partitions) when it's attached
-or detached to other VM. This is used to prevent accidential attachment of
-whole device and its partitions at the same time.
-
-Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
----
- tools/hotplug/Linux/block | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
-
 diff --git a/tools/hotplug/Linux/block b/tools/hotplug/Linux/block
-index dc4466906e70..c0d509ef8ccd 100644
+index dc4466906e..c0d509ef8c 100644
 --- a/tools/hotplug/Linux/block
 +++ b/tools/hotplug/Linux/block
 @@ -281,6 +281,12 @@ case "$command" in
@@ -54,6 +36,3 @@ index dc4466906e70..c0d509ef8ccd 100644
  	exit 0
  	;;
  
--- 
-2.44.0
-

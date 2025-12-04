@@ -1,28 +1,5 @@
-From 78b0146b0f594388520e5826dda489438562137b Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
- <marmarek@invisiblethingslab.com>
-Date: Thu, 27 Oct 2022 21:16:18 +0200
-Subject: [PATCH] libxl: workaround for Windows PV drivers removing
- control/shutdown node
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-win-pv-drivers 8.x remove control/shutdown node as an acknowledgement,
-instead of just clearing the content. This means the subsequent write
-will create it anew, with default permissions (dom0 write, guest read).
-Such permissions won't allow the guest to acknowledge subsequent
-requests.
-
-Workaround the issue by explicitly setting permissions after the write.
-
-Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
----
- tools/libs/light/libxl_domain.c | 28 ++++++++++++++++++++++++++--
- 1 file changed, 26 insertions(+), 2 deletions(-)
-
 diff --git a/tools/libs/light/libxl_domain.c b/tools/libs/light/libxl_domain.c
-index 324a4c6607e7..25cde778352d 100644
+index 324a4c6607..25cde77835 100644
 --- a/tools/libs/light/libxl_domain.c
 +++ b/tools/libs/light/libxl_domain.c
 @@ -767,7 +767,12 @@ int libxl__domain_pvcontrol(libxl__egc *egc, libxl__xswait_state *pvcontrol,
@@ -69,6 +46,3 @@ index 324a4c6607e7..25cde778352d 100644
  
      pvcontrol->path = shutdown_path;
      pvcontrol->what = GCSPRINTF("guest acknowledgement of %s request", cmd);
--- 
-2.48.1
-

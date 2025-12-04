@@ -1,20 +1,8 @@
-From e6482ffa566bae21c006c90d0879c64baa678579 Mon Sep 17 00:00:00 2001
-From: Grzegorz Uriasz <gorbak25@gmail.com>
-Date: Thu, 13 Feb 2020 02:30:36 +0000
-Subject: [PATCH] Fix IGD passthrough with linux stubdomain
-
-- Give permissions for VGA IOPORTS
-- Give permission for opregions
-- Map vbios to stubdom
----
- tools/libs/light/libxl_pci.c | 152 +++++++++++++++++++++++++++++------
- 1 file changed, 126 insertions(+), 26 deletions(-)
-
 diff --git a/tools/libs/light/libxl_pci.c b/tools/libs/light/libxl_pci.c
-index 0302b5990f06..35e3e1360423 100644
+index 59a363add4..0b0b6250f9 100644
 --- a/tools/libs/light/libxl_pci.c
 +++ b/tools/libs/light/libxl_pci.c
-@@ -2594,17 +2594,128 @@ void libxl__device_pci_destroy_all(libxl__egc *egc, uint32_t domid,
+@@ -2618,17 +2618,128 @@ void libxl__device_pci_destroy_all(libxl__egc *egc, uint32_t domid,
      libxl_device_pci_list_free(pcis, num);
  }
  
@@ -147,8 +135,8 @@ index 0302b5990f06..35e3e1360423 100644
          libxl_device_pci *pci = &d_config->pcidevs[i];
          unsigned long pci_device_class;
  
-@@ -2613,30 +2724,19 @@ int libxl__grant_vga_iomem_permission(libxl__gc *gc, const uint32_t domid,
-                 pci_device_class != 0x038000) /* Display class */
+@@ -2638,30 +2749,19 @@ int libxl__grant_vga_iomem_permission
+             (pci_device_class != 0x038000)) /* Display class */ 
              continue;
  
 -        stubdom_domid = libxl_get_stubdom_id(CTX, domid);
@@ -189,6 +177,3 @@ index 0302b5990f06..35e3e1360423 100644
  }
  
  static int libxl_device_pci_compare(const libxl_device_pci *d1,
--- 
-2.44.0
-

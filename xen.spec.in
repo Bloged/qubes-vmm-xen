@@ -40,7 +40,8 @@
 %endif
 # build an efi boot image (where supported) unless rpmbuild was run with
 # --without efi
-%define build_efi 1
+# EFI generation disabled with pvshim disabled in Xen 4.20.2
+%define build_efi 0
 # xen only supports efi boot images on x86_64 or aarch64
 # i686 builds a x86_64 hypervisor so add that as well
 %ifnarch x86_64 aarch64 %{ix86}
@@ -97,10 +98,6 @@ Patch0202: 0202-Add-xen.cfg-options-for-mapbs-and-noexitboot.patch
 Patch0203: 0203-xen.efi.build.patch
 
 # Backports (300+)
-Patch0300: 0300-xen-list-add-LIST_HEAD_RO_AFTER_INIT.patch
-Patch0301: 0301-x86-mm-add-API-for-marking-only-part-of-a-MMIO-page-.patch
-Patch0302: 0302-drivers-char-Use-sub-page-ro-API-to-make-just-xhci-d.patch
-Patch0303: 0303-x86-suspend-unconditionally-raise-a-timer-softirq-on.patch
 
 # Security fixes (500+)
 
@@ -108,12 +105,10 @@ Patch0303: 0303-x86-suspend-unconditionally-raise-a-timer-softirq-on.patch
 Patch0600: 0600-libxl-create-writable-error-xenstore-dir.patch
 Patch0601: 0601-libxl-do-not-wait-for-backend-on-PCI-remove-when-bac.patch
 Patch0602: 0602-libvchan-use-xengntshr_unshare-instead-of-munmap-dir.patch
-Patch0603: 0603-x86-time-Don-t-use-EFI-s-GetTime-call-by-default.patch
 Patch0604: 0604-libxl-automatically-enable-gfx_passthru-if-IGD-is-as.patch
 Patch0605: 0605-autoconf-fix-handling-absolute-PYTHON-path.patch
 Patch0606: 0606-libxl-do-not-require-filling-backend_domid-to-remove.patch
 Patch0607: 0607-libxl-add-pcidevs-to-stubdomain-earlier.patch
-Patch0608: 0608-Fix-buildid-alignment.patch
 Patch0609: 0609-vchan-socket-proxy-add-reconnect-marker-support.patch
 Patch0610: 0610-tools-libxl-enable-in-band-reconnect-marker-for-stub.patch
 Patch0611: 0611-libxl-Add-a-utility-function-for-domain-resume.patch
@@ -173,6 +168,9 @@ Patch1103: 1103-Strip-build-path-directories-in-tools-xen-and-xen-ar.patch
 Patch1200: 1200-hypercall-XENMEM_get_mfn_from_pfn.patch
 Patch1201: 1201-patch-gvt-hvmloader.patch.patch
 Patch1202: 1202-libxl-Add-partially-Intel-GVT-g-support-xengt-device.patch
+
+Patch9000: 9000-disable-llc-coloring-calls.patch
+Patch9001: 9001-fix-combine-two-binaries-gcc14.patch
 
 %if %build_qemutrad
 BuildRequires: libidn-devel zlib-devel SDL-devel curl-devel
@@ -415,6 +413,7 @@ EXTRA_CFLAGS_XEN_TOOLS="$RPM_OPT_FLAGS $LDFLAGS"
 EXTRA_CFLAGS_XEN_TOOLS="$EXTRA_CFLAGS_XEN_TOOLS -Wno-error=use-after-free"
 %endif
 export EXTRA_CFLAGS_XEN_TOOLS
+export EXTRA_CFLAGS_XEN_CORE="-O1 -fno-reorder-blocks -fno-reorder-functions -fno-toplevel-reorder -falign-functions=1 -falign-jumps=1 -falign-loops=1 -falign-labels=1"
 # END QUBES SPECIFIC PART
 export EXTRA_CFLAGS_QEMU_TRADITIONAL="$RPM_OPT_FLAGS"
 export EXTRA_CFLAGS_QEMU_XEN="$RPM_OPT_FLAGS"
@@ -436,6 +435,9 @@ CONFIG_EXTRA="$CONFIG_EXTRA --with-system-ipxe=/usr/share/ipxe/10ec8139.rom"
 CONFIG_EXTRA="$CONFIG_EXTRA --with-system-seabios=/usr/share/seabios/bios-256k.bin"
 %else
 CONFIG_EXTRA="$CONFIG_EXTRA --disable-seabios"
+%endif
+%ifnarch armv7hl aarch64
+CONFIG_EXTRA="$CONFIG_EXTRA --disable-pvshim"
 %endif
 ./configure --prefix=%{_prefix} --libdir=%{_libdir} --libexecdir=%{_libexecdir} --with-system-qemu=/usr/bin/qemu-system-i386 --with-linux-backend-modules="xen-evtchn xen-gntdev xen-gntalloc xen-blkback xen-netback xen-pciback xen-scsiback xen-acpi-processor" --enable-systemd --disable-pygrub $CONFIG_EXTRA
 unset CFLAGS CXXFLAGS FFLAGS LDFLAGS
@@ -462,7 +464,7 @@ unset CFLAGS CXXFLAGS FFLAGS LDFLAGS
 %ifnarch armv7hl aarch64
 #CONFIG_EXTRA="$CONFIG_EXTRA --with-system-ipxe=/usr/share/ipxe"
 CONFIG_EXTRA="$CONFIG_EXTRA --disable-ipxe --disable-rombios"
-CONFIG_EXTRA="$CONFIG_EXTRA --disable-pvshim"
+# Removed duplicate --disable-pvshim - now added before first configure
 %endif
 CONFIG_EXTRA="$CONFIG_EXTRA --with-system-qemu=/usr/bin/qemu-system-x86_64"
 export PATH="/usr/bin:$PATH"
@@ -531,21 +533,21 @@ rm -f %{buildroot}/usr/sbin/flask-*
 # END QUBES SPECIFIC PART
 %endif
 
-# BEGIN QUBES SPECIFIC PART
-# install debug hypervisor
-cp dist/install/boot/efi/efi/qubes/xen-%{upstream_version}.efi \
-    %{buildroot}/boot/efi/EFI/qubes/xen-%{upstream_version}~debug.efi
-cp dist/install/boot/xen-%{upstream_version}.gz \
-    %{buildroot}/boot/xen-%{upstream_version}~debug.gz
-cp dist/install/boot/xen-%{upstream_version}.config \
-    %{buildroot}/boot/xen-%{upstream_version}~debug.config
-cp dist/install/usr/lib/debug/xen-%{upstream_version}.efi.map \
-    %{buildroot}/usr/lib/debug/xen-%{upstream_version}~debug.efi.map
-cp dist/install/usr/lib/debug/xen-syms-%{upstream_version} \
-    %{buildroot}/usr/lib/debug/xen-syms-%{upstream_version}~debug
-cp dist/install/usr/lib/debug/xen-syms-%{upstream_version}.map \
-    %{buildroot}/usr/lib/debug/xen-syms-%{upstream_version}~debug.map
-# END QUBES SPECIFIC PART
+# # BEGIN QUBES SPECIFIC PART
+# # install debug hypervisor
+# cp %{buildroot}/usr/lib64/efi/xen-%{upstream_version}.efi \
+#     %{buildroot}/boot/efi/EFI/qubes/xen-%{upstream_version}~debug.efi
+# cp dist/install/boot/xen-%{upstream_version}.gz \
+#     %{buildroot}/boot/xen-%{upstream_version}~debug.gz
+# cp dist/install/boot/xen-%{upstream_version}.config \
+#     %{buildroot}/boot/xen-%{upstream_version}~debug.config
+# cp dist/install/usr/lib/debug/xen-%{upstream_version}.efi.map \
+#     %{buildroot}/usr/lib/debug/xen-%{upstream_version}~debug.efi.map
+# cp dist/install/usr/lib/debug/xen-syms-%{upstream_version} \
+#     %{buildroot}/usr/lib/debug/xen-syms-%{upstream_version}~debug
+# cp dist/install/usr/lib/debug/xen-syms-%{upstream_version}.map \
+#     %{buildroot}/usr/lib/debug/xen-syms-%{upstream_version}~debug.map
+# # END QUBES SPECIFIC PART
 
 ############ debug packaging: list files ############
 
@@ -949,8 +951,8 @@ fi
 %dir %{_libexecdir}/%{name}/boot
 %{_libexecdir}/xen/boot/hvmloader
 %ifnarch %{ix86}
-%{_libexecdir}/%{name}/boot/xen-shim
-/usr/lib/debug%{_libexecdir}/xen/boot/xen-shim-syms
+# %{_libexecdir}/%{name}/boot/xen-shim
+# /usr/lib/debug%{_libexecdir}/xen/boot/xen-shim-syms
 %endif
 %if %build_stubdom
 %if %build_qemutrad
@@ -1065,23 +1067,23 @@ fi
 %endif
 /usr/lib/debug/xen-syms-[0-9]*[0-9]
 /usr/lib/debug/xen-syms-[0-9]*[0-9].map
-%{_libdir}/efi/xen-[0-9]*[0-9].efi
+# %{_libdir}/efi/xen-[0-9]*[0-9].efi
 %endif
 
-%files hypervisor-debug
-%if %build_hyp
-%defattr(-,root,root)
-%ifnarch armv7hl aarch64
-/boot/xen-*~debug.gz
-/boot/xen-*~debug.config
-%else
-/boot/xen-*~debug
-%endif
-%if %build_efi
-/boot/efi/EFI/qubes/xen-*~debug.efi
-%endif
-/usr/lib/debug/xen-*~debug*
-%endif
+# %files hypervisor-debug
+# %if %build_hyp
+# %defattr(-,root,root)
+# %ifnarch armv7hl aarch64
+# /boot/xen-*~debug.gz
+# /boot/xen-*~debug.config
+# %else
+# /boot/xen-*~debug
+# %endif
+# %if %build_efi
+# /boot/efi/EFI/qubes/xen-*~debug.efi
+# %endif
+# /usr/lib/debug/xen-*~debug*
+# %endif
 
 
 %if %build_docs

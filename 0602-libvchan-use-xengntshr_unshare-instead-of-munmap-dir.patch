@@ -1,15 +1,5 @@
-From db5785515ab62c9e9851599a2518e9beca8d10be Mon Sep 17 00:00:00 2001
-From: Marek Marczykowski <marmarek@invisiblethingslab.com>
-Date: Fri, 26 Apr 2013 14:40:05 +0200
-Subject: [PATCH] libvchan: use xengntshr_unshare instead of munmap directly
-
-Signed-off-by: Marek Marczykowski <marmarek@invisiblethingslab.com>
----
- tools/libs/vchan/io.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
-
 diff --git a/tools/libs/vchan/io.c b/tools/libs/vchan/io.c
-index 1f201ad554f2..9339e97c79d0 100644
+index 1f201ad554..9339e97c79 100644
 --- a/tools/libs/vchan/io.c
 +++ b/tools/libs/vchan/io.c
 @@ -362,9 +362,11 @@ void libxenvchan_close(struct libxenvchan *ctrl)
@@ -26,6 +16,3 @@ index 1f201ad554f2..9339e97c79d0 100644
  	if (ctrl->ring) {
  		if (ctrl->is_server) {
  			ctrl->ring->srv_live = 0;
--- 
-2.48.1
-

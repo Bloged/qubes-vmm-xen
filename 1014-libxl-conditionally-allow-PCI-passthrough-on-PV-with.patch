@@ -1,31 +1,8 @@
-From 25b52d40a4c88465242c89bf452a3b79e6a9563d Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
- <marmarek@invisiblethingslab.com>
-Date: Sat, 16 Jan 2021 05:06:18 +0100
-Subject: [PATCH] libxl: conditionally allow PCI passthrough on PV without
- IOMMU
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-Without IOMMU, PCI passthrough cannot be used securely. But there are
-still various Qubes OS features that would be useful and improve overall
-system trustworthiness compared to monolithic system.
-This is also handy for development, to allow running Qubes OS nested
-withing KVM (on AMD, vIOMMU is unstable).
-
-Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
----
- tools/libs/light/libxl_create.c   |  8 +++++-
- tools/libs/light/libxl_internal.h |  2 ++
- tools/libs/light/libxl_pci.c      | 41 +++++++++++++++++++++++++++++--
- 3 files changed, 48 insertions(+), 3 deletions(-)
-
 diff --git a/tools/libs/light/libxl_create.c b/tools/libs/light/libxl_create.c
-index 0ed0d026de2e..d89515b8693e 100644
+index aa4eb9284a..c04ccd6ad5 100644
 --- a/tools/libs/light/libxl_create.c
 +++ b/tools/libs/light/libxl_create.c
-@@ -1209,12 +1209,18 @@ int libxl__domain_config_setdefault(libxl__gc *gc,
+@@ -1227,12 +1227,18 @@ int libxl__domain_config_setdefault(libxl__gc *gc,
       * This will be insufficient if and when ARM does PCI hotplug.
       */
      bool need_pt = d_config->num_pcidevs || d_config->num_dtdevs;
@@ -46,10 +23,10 @@ index 0ed0d026de2e..d89515b8693e 100644
          LOGD(ERROR, domid,
               "passthrough not supported on this platform\n");
 diff --git a/tools/libs/light/libxl_internal.h b/tools/libs/light/libxl_internal.h
-index 3a1841b2ed90..532c42cda89c 100644
+index 39bf133cca..475e365f0e 100644
 --- a/tools/libs/light/libxl_internal.h
 +++ b/tools/libs/light/libxl_internal.h
-@@ -4850,6 +4850,8 @@ static inline const char *libxl__qemu_qmp_path(libxl__gc *gc, int domid)
+@@ -4857,6 +4857,8 @@ static inline const char *libxl__qemu_qmp_path(libxl__gc *gc, int domid)
      return GCSPRINTF("%s/qmp-libxl-%d", libxl__run_dir_path(), domid);
  }
  
@@ -59,10 +36,10 @@ index 3a1841b2ed90..532c42cda89c 100644
  _hidden int libxl__domain_pvcontrol(libxl__egc *egc,
                                      libxl__xswait_state *pvcontrol,
 diff --git a/tools/libs/light/libxl_pci.c b/tools/libs/light/libxl_pci.c
-index 6b8d8945b390..3a449d1cc0b7 100644
+index 427b3178ad..59a363add4 100644
 --- a/tools/libs/light/libxl_pci.c
 +++ b/tools/libs/light/libxl_pci.c
-@@ -1539,8 +1539,10 @@ out_no_irq:
+@@ -1553,8 +1553,10 @@ out_no_irq:
          r = xc_assign_device(ctx->xch, domid, pci_encode_bdf(pci), flag);
          if (r < 0 && (hvm || errno != ENOSYS)) {
              LOGED(ERROR, domainid, "xc_assign_device failed");
@@ -75,7 +52,7 @@ index 6b8d8945b390..3a449d1cc0b7 100644
          }
      }
  
-@@ -1591,6 +1593,41 @@ static int libxl__device_pci_reset(libxl__gc *gc, unsigned int domain, unsigned
+@@ -1605,6 +1607,41 @@ static int libxl__device_pci_reset(libxl__gc *gc, unsigned int domain, unsigned
      return -1;
  }
  
@@ -117,6 +94,3 @@ index 6b8d8945b390..3a449d1cc0b7 100644
  int libxl__device_pci_setdefault(libxl__gc *gc, uint32_t domid,
                                   libxl_device_pci *pci, bool hotplug)
  {
--- 
-2.48.1
-

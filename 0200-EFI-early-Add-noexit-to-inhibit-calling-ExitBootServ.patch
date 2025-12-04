@@ -1,26 +1,8 @@
-From bf8e7496d95c2a71a3bdac4340e1a9c03b86b0af Mon Sep 17 00:00:00 2001
-From: Konrad Rzeszutek Wilk <konrad@xxxxxxxxxx>
-Date: Fri, 24 Apr 2015 16:47:18 -0400
-Subject: [PATCH] EFI/early: Add /noexit to inhibit calling ExitBootServices
-
-The '/noexitboot' parameter will inhibit Xen in calling ExitBootServices.
-
-That helps with some platforms with GetNextVariableName which
-cannot deal running in 1-1 mode and having BootSevices being disabled.
-
-Signed-off-by: Konrad Rzeszutek Wilk <konrad.wilk@xxxxxxxxxx>
-Ported to Xen 4.7.0
-Signed-off-by: Marcus of Wetware Labs <marcus@wetwa.re>
----
- xen/arch/x86/efi/efi-boot.h |  2 +-
- xen/common/efi/boot.c       | 16 +++++++++++-----
- 2 files changed, 12 insertions(+), 6 deletions(-)
-
 diff --git a/xen/arch/x86/efi/efi-boot.h b/xen/arch/x86/efi/efi-boot.h
-index f282358435f1..39cc8baef4bc 100644
+index 1d8902a9a7..367f6f36b5 100644
 --- a/xen/arch/x86/efi/efi-boot.h
 +++ b/xen/arch/x86/efi/efi-boot.h
-@@ -909,7 +909,7 @@ void asmlinkage __init efi_multiboot2(EFI_HANDLE ImageHandle,
+@@ -905,7 +905,7 @@ void __init efi_multiboot2(EFI_HANDLE ImageHandle,
  
      efi_relocate_esrt(SystemTable);
  
@@ -30,7 +12,7 @@ index f282358435f1..39cc8baef4bc 100644
  
  /*
 diff --git a/xen/common/efi/boot.c b/xen/common/efi/boot.c
-index efbec00af9da..8004cf4d1303 100644
+index 04d4bbd801..7bb4c643bf 100644
 --- a/xen/common/efi/boot.c
 +++ b/xen/common/efi/boot.c
 @@ -146,7 +146,7 @@ static void efi_tables(void);
@@ -42,7 +24,7 @@ index efbec00af9da..8004cf4d1303 100644
  
  static const EFI_BOOT_SERVICES *__initdata efi_bs;
  static UINT32 __initdata efi_bs_revision;
-@@ -1180,7 +1180,7 @@ static void __init efi_set_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, UINTN gop
+@@ -1181,7 +1181,7 @@ static void __init efi_set_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, UINTN gop
  #define INVALID_VIRTUAL_ADDRESS (0xBAAADUL << \
                                   (EFI_PAGE_SHIFT + BITS_PER_LONG - 32))
  
@@ -51,7 +33,7 @@ index efbec00af9da..8004cf4d1303 100644
  {
      EFI_STATUS status;
      UINTN info_size = 0, map_key;
-@@ -1211,8 +1211,11 @@ static void __init efi_exit_boot(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *Syste
+@@ -1212,8 +1212,11 @@ static void __init efi_exit_boot(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *Syste
  
          efi_arch_pre_exit_boot();
  
@@ -64,7 +46,7 @@ index efbec00af9da..8004cf4d1303 100644
          efi_bs = NULL;
          if ( status != EFI_INVALID_PARAMETER || retry )
              break;
-@@ -1268,7 +1271,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
+@@ -1269,7 +1272,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
      EFI_SHIM_LOCK_PROTOCOL *shim_lock;
      EFI_GRAPHICS_OUTPUT_PROTOCOL *gop = NULL;
      union string section = { NULL }, name;
@@ -73,7 +55,7 @@ index efbec00af9da..8004cf4d1303 100644
      const char *option_str;
      bool use_cfg_file;
      int dt_modules_found;
-@@ -1318,6 +1321,8 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
+@@ -1319,6 +1322,8 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
                      base_video = true;
                  else if ( wstrcmp(ptr + 1, L"mapbs") == 0 )
                      map_bs = true;
@@ -82,7 +64,7 @@ index efbec00af9da..8004cf4d1303 100644
                  else if ( wstrncmp(ptr + 1, L"cfg=", 4) == 0 )
                      cfg_file_name = ptr + 5;
                  else if ( i + 1 < argc && wstrcmp(ptr + 1, L"cfg") == 0 )
-@@ -1328,6 +1333,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
+@@ -1329,6 +1334,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
                      PrintStr(L"Xen EFI Loader options:\r\n");
                      PrintStr(L"-basevideo   retain current video mode\r\n");
                      PrintStr(L"-mapbs       map EfiBootServices{Code,Data}\r\n");
@@ -90,7 +72,7 @@ index efbec00af9da..8004cf4d1303 100644
                      PrintStr(L"-cfg=<file>  specify configuration file\r\n");
                      PrintStr(L"-help, -?    display this help\r\n");
                      blexit(NULL);
-@@ -1541,7 +1547,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
+@@ -1545,7 +1551,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
  
      efi_relocate_esrt(SystemTable);
  
@@ -99,6 +81,3 @@ index efbec00af9da..8004cf4d1303 100644
  
      efi_arch_post_exit_boot(); /* Doesn't return. */
  }
--- 
-2.44.0
-

@@ -1,29 +1,5 @@
-From e952a87a9869f87f8cb6183d7c2d4ab4e5d234f7 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
- <marmarek@invisiblethingslab.com>
-Date: Sun, 10 Feb 2019 02:11:50 +0100
-Subject: [PATCH] tools/xenconsole: replace ESC char on xenconsole output by
- default
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-And add --no-replace-escape option to disable it.
-This is done to prevent domU from exploiting hypothetical bug in
-terminal emulator.
-
-Add an -r/--no-replace-escape option to xenconsole client to disable
-replacing ESC. Carry it from xl command through env variable.
-
-Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
----
- tools/console/client/main.c | 21 ++++++++++++++++++---
- tools/xl/xl_cmdtable.c      |  3 ++-
- tools/xl/xl_console.c       |  7 ++++++-
- 3 files changed, 26 insertions(+), 5 deletions(-)
-
 diff --git a/tools/console/client/main.c b/tools/console/client/main.c
-index d2dcc3ddcac3..3d6cea805908 100644
+index d2dcc3ddca..3d6cea8059 100644
 --- a/tools/console/client/main.c
 +++ b/tools/console/client/main.c
 @@ -78,6 +78,7 @@ static void usage(const char *program) {
@@ -107,7 +83,7 @@ index d2dcc3ddcac3..3d6cea805908 100644
  	free(path);
  	free(dom_path);
 diff --git a/tools/xl/xl_cmdtable.c b/tools/xl/xl_cmdtable.c
-index 42751228c1d1..2185777525d2 100644
+index 06a0039718..37f8405a93 100644
 --- a/tools/xl/xl_cmdtable.c
 +++ b/tools/xl/xl_cmdtable.c
 @@ -142,7 +142,8 @@ const struct cmd_spec cmd_table[] = {
@@ -121,7 +97,7 @@ index 42751228c1d1..2185777525d2 100644
      { "vncviewer",
        &main_vncviewer, 0, 0,
 diff --git a/tools/xl/xl_console.c b/tools/xl/xl_console.c
-index 5633c6f6f7e6..0d8b3e858303 100644
+index 5633c6f6f7..0d8b3e8583 100644
 --- a/tools/xl/xl_console.c
 +++ b/tools/xl/xl_console.c
 @@ -27,10 +27,11 @@ int main_console(int argc, char **argv)
@@ -151,6 +127,3 @@ index 5633c6f6f7e6..0d8b3e858303 100644
      domid = find_domain(argv[optind]);
      if (!type)
          libxl_primary_console_exec(ctx, domid, -1, escape_character);
--- 
-2.44.0
-

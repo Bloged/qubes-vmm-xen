@@ -1,22 +1,5 @@
-From eaae036362dadc00a51441706239d47a170f8f97 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
- <marmarek@invisiblethingslab.com>
-Date: Wed, 16 Nov 2022 01:38:52 +0100
-Subject: [PATCH] hotplug: store block params for cleanup
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-Use /var/run/xen-hotplug for storing information needed to cleanup devices.
-When called "remove" action - xenstore entriens can be already deleted.
-
-Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
----
- tools/hotplug/Linux/block | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
 diff --git a/tools/hotplug/Linux/block b/tools/hotplug/Linux/block
-index 2691b56951c9..dc4466906e70 100644
+index 2691b56951..dc4466906e 100644
 --- a/tools/hotplug/Linux/block
 +++ b/tools/hotplug/Linux/block
 @@ -3,6 +3,8 @@
@@ -65,6 +48,3 @@ index 2691b56951c9..dc4466906e70 100644
          release_lock "block"
  	exit 0
  	;;
--- 
-2.44.0
-
