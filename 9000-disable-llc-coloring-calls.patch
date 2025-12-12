@@ -1,0 +1,48 @@
+diff --git a/xen/common/page_alloc.c b/xen/common/page_alloc.c
+index 1bf070c..2c95452 100644
+--- a/xen/common/page_alloc.c
++++ b/xen/common/page_alloc.c
+@@ -2014,8 +2014,13 @@ static void free_color_heap_page(struct page_info *pg, bool need_scrub)
+ {
+     unsigned int color;
+ 
++#ifdef CONFIG_LLC_COLORING
++
+     color = page_to_llc_color(pg);
+     free_colored_pages[color]++;
++#else
++    color = 0;
++#endif
+     /*
+      * Head insertion allows re-using cache-hot pages in configurations without
+      * sharing of colors.
+@@ -2106,6 +2111,7 @@ static void __init init_color_heap_pages(struct page_info *pg,
+ 
+     if ( !_color_heap )
+     {
++#ifdef CONFIG_LLC_COLORING
+         unsigned int max_nr_colors = get_max_nr_llc_colors();
+ 
+         _color_heap = xvmalloc_array(struct page_list_head, max_nr_colors);
+@@ -2115,6 +2121,7 @@ static void __init init_color_heap_pages(struct page_info *pg,
+ 
+         for ( i = 0; i < max_nr_colors; i++ )
+             INIT_PAGE_LIST_HEAD(color_heap(i));
++#endif
+     }
+ 
+     for ( i = 0; i < nr_pages; i++ )
+@@ -2128,8 +2135,13 @@ static void dump_color_heap(void)
+ {
+     unsigned int color;
+ 
++#ifdef CONFIG_LLC_COLORING
++
+     printk("Dumping color heap info\n");
+     for ( color = 0; color < get_max_nr_llc_colors(); color++ )
++#else
++    color = 0;
++#endif
+         if ( free_colored_pages[color] > 0 )
+             printk("Color heap[%u]: %lu pages\n",
+                    color, free_colored_pages[color]);
